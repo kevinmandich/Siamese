@@ -28,7 +28,6 @@ class NeuralNetwork(object):
         #num_features = X.shape[0]
         inputLayerSize = X.shape[1]
         numClassifyValues = len(set(y))
-        print numClassifyValues
         
         theta1Init = self.initialize_weights(inputLayerSize, self.hiddenLayerSize)
         theta2Init = self.initialize_weights(self.hiddenLayerSize, numClassifyValues)
@@ -91,32 +90,13 @@ class NeuralNetwork(object):
         Delta1, Delta2 = 0, 0
         for i, row in enumerate(X):
             a1, z2, a2, z3, a3 = self._forward(row, t1, t2)
-            if speak == 2:
-                print '\n\n',a1
-                print z2
-                print a2
-                print z3
-                print a3,'\n\n'
-                #time.sleep(100)
             
             ## back-propagation
             d3 = a3 - Y[i, :].T
             d2 = np.dot(t2f.T, d3) * self.sigmoid_deriv(z2)
-            if speak == 2:
-                print '\n',t2f.T,'\n'
-                print '\n',d3,'\n'
-                print '\n',self.sigmoid_deriv(z2),'\n'
-                print '\n',np.dot(t2f.T, d3) * self.sigmoid_deriv(z2),'\n'
-                time.sleep(100)
 
             Delta2 += np.dot(d3[np.newaxis].T, a2[np.newaxis])
             Delta1 += np.dot(d2[np.newaxis].T, a1[np.newaxis])
-            if speak == 1:
-                print 'd 1 = {}'.format(d3.reshape(-1))
-                print 'delta 2 = {}'.format(Delta2.reshape(-1))
-                print 'd 2 = {}'.format(d2.reshape(-1))
-                print 'delta 1 = {}'.format(Delta1.reshape(-1))
-                time.sleep(100)
             
         Theta1_grad = (1 / m) * Delta1
         Theta2_grad = (1 / m) * Delta2
@@ -202,41 +182,12 @@ if __name__ == '__main__':
 
     X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.4)
 
-    nn = NeuralNetwork(hiddenLayerSize = 5)
+    nn = NeuralNetwork()
     nn.fit(X_train, y_train)
 
     score = accuracy_score(y_test, nn.predict(X_test))
-
+    
     print score
-
-    thetas = [X_train, X_test, y_train, y_test, nn.t1, nn.t2]
-
-    fileName = 'c:\\test\\thetas.pkl'
-    f = open(fileName, 'w')
-    pickle.dump(thetas, f)
-    f.close()
-
-    #hypo = nn.predict_probability(X_test)
-    #print 'hypo = {}'.format(hypo)
-
-
-    thetas = nn.pack_thetas(nn.t1, nn.t2)
-    inputLayerSize = X_test.shape[1]
-    numClassifyValues = len(set(y_test))
-
-    J    = nn.function      (thetas, inputLayerSize, 5, numClassifyValues, X_test, y_test, 0)
-    J_t  = nn.function_prime(thetas, inputLayerSize, 5, numClassifyValues, X_test, y_test, 0, 0)
-
-    t1, t2 = nn.unpack_thetas(J_t, inputLayerSize, 5, numClassifyValues)
-
-    print '\nJ = {}\n'.format(J)
-    print t1.reshape(-1)
-    print t2.reshape(-1)
-
-
-
-    #print inputLayerSize, hiddenLayerSize, numClassifyValues, lambda_
-
 
 
 
