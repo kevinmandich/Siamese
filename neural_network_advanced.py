@@ -6,7 +6,7 @@ import sklearn.datasets as datasets
 from sklearn import cross_validation
 from sklearn.metrics import accuracy_score
 
-import time
+import time, pickle
 
 # change
 
@@ -56,7 +56,7 @@ class NeuralNetwork(object):
 
         thetasInitVec = self.pack_thetas(thetasInit)
 
-        _res = minimize(self.function, thetasInitVec, jac=self.function_prime, method=self.optimizeAlgo, \
+        _res = minimize(self.function, thetasInitVec, jac=self.function_deriv, method=self.optimizeAlgo, \
                                  args=(inputLayerSize, self.hiddenLayerSize, numClassifyValues, X, y, 0), \
                                  options={'maxiter': self.maxIter} )
 
@@ -66,13 +66,13 @@ class NeuralNetwork(object):
 
     def predict(self, X):
 
-        _, _, _, _, hypothesis = self._forward(X, self.t1, self.t2)
+        _, _, _, _, hypothesis = self._forward(X, self.thetas)
         return hypothesis.argmax(0)
     
 
     def predict_probability(self, X):
 
-        _, _, _, _, hypothesis = self._forward(X, self.t1, self.t2)
+        _, _, _, _, hypothesis = self._forward(X, self.thetas)
         return hypothesis
 
 
@@ -100,37 +100,54 @@ class NeuralNetwork(object):
         return J
         
 
-    def function_prime(self, thetas, inputLayerSize, hiddenLayerSize, numClassifyValues, X, y, lambda_):
+    def function_deriv(self, thetas, inputLayerSize, hiddenLayerSize, numClassifyValues, X, y, lambda_, speak=1):
         thetas = self.unpack_thetas(thetas, inputLayerSize, numClassifyValues)
         ## compute dJ(theta)/dtheta
         
         m = X.shape[0] ## number of training examples
-        t1f = t1[:, 1:]
-        t2f = t2[:, 1:]
+        tf = []
+        for t in thetas:
+            tf.append(t[:, 1:])
         Y = np.eye(numClassifyValues)[y]
         
-        Delta1, Delta2 = 0, 0
+        deltas = [0 for x in range(self.numHiddenLayers + 1)]
+
         for i, row in enumerate(X):
-            a1, z2, a2, z3, a3 = self._forward(row, thetas)
+
+            aIn, zH, aH, zOut, aOut = self._forward(row, thetas)
             
             ## back-propagation
-            d3 = a3 - Y[i, :].T
-            d2 = np.dot(t2f.T, d3) * self.sigmoid_deriv(z2)           
-            Delta2 += np.dot(d3[np.newaxis].T, a2[np.newaxis])
-            Delta1 += np.dot(d2[np.newaxis].T, a1[np.newaxis])
-            
-        Theta1_grad = (1 / m) * Delta1
-        Theta2_grad = (1 / m) * Delta2
+            for j in range(self.numHiddenLayers, -1, -1):
+                if j == self.numHiddenLayers:
+                    d = aOut - Y[i, :].T
+                else:
+                    d = np.dot(tf[j+1].T, d) * self.sigmoid_deriv(zH[j])
+
+                if j == 0:
+                    deltas[j] += np.dot(d[np.newaxis].T, aIn[np.newaxis])
+                else:
+                    deltas[j] += np.dot(d[np.newaxis].T, aH[j-1][np.newaxis])
+
+        thetaGradients = []
+        for delta in deltas:
+            thetaGradients.append((1 / m) * delta)
         
         ## apply regularization
         if lambda_ != 0:
-            Theta1_grad[:, 1:] = Theta1_grad[:, 1:] + (lambda_ / m) * t1f
-            Theta2_grad[:, 1:] = Theta2_grad[:, 1:] + (lambda_ / m) * t2f
-        
-        return self.pack_thetas(Theta1_grad, Theta2_grad)
+            for i in range(self.numHiddenLayers + 1):
+                thetaGradients[i][:, 1:] = thetaGradients[i][:, 1:] + (lambda_m / m) * tf[i]
+
+        return self.pack_thetas(thetaGradients)
 
 
     def _forward(self, X, thetas):
+        '''
+        Computes the forward propagation of the neural network.
+
+            Arguments:
+        X       = sample data set
+        thetas  = list of arrays of theta weights
+        '''
 
         m = X.shape[0]
         #bias = None
@@ -140,25 +157,30 @@ class NeuralNetwork(object):
             bias = np.ones(m).reshape(m,1)
         
         # Input layer
-        a = np.hstack((bias, X))
+        aIn = np.hstack((bias, X))
         
+        # Hidden Layers
         aH = []
         zH = []
-        # Hidden Layers
         for i in range(0, self.numHiddenLayers):
-        t = thetas[i]
-        z = np.dot(t, a.T)
-        a = self.sigmoid(z)
-        a = np.hstack((bias, a.T))
-        aH.append(a)
-        zH.append(z)
+            t = thetas[i]
+            if i == 0:
+                z = np.dot(t, aIn.T)
+            else:
+                z = np.dot(t, a.T)
+            a = self.sigmoid(z)
+            a = np.hstack((bias, a.T))
+            aH.append(a)
+            zH.append(z)
         
         # Output layer
         tOut = thetas[len(thetas)-1]
         zOut = np.dot(tOut, aH[len(aH)-1].T)
         aOut = self.sigmoid(zOut)
 
-        return a1, zH, aH, zOut, aOut
+        ########## do we ever use z3 outside of this function? check the original code.
+
+        return aIn, zH, aH, zOut, aOut
     
 
     def sigmoid(self, z):
@@ -180,12 +202,7 @@ class NeuralNetwork(object):
     def initialize_weights(self, l_in, l_out):
 
         return np.random.rand(l_out, l_in + 1) * 2 * self.smallInitValue - self.smallInitValue
-    
-    '''
-    def pack_thetas(self, t1, t2):
 
-        return np.concatenate((t1.reshape(-1), t2.reshape(-1)))
-    '''
 
     def pack_thetas(self, thetas):
         '''
@@ -196,16 +213,6 @@ class NeuralNetwork(object):
 
         return np.concatenate([x.reshape(-1) for x in thetas])
     
-    '''
-    def unpack_thetas_old(self, thetas, inputLayerSize, hiddenLayerSize, numClassifyValues):
-
-        ## unvectorizing thetas
-        t1_start = 0
-        t1_end = hiddenLayerSize * (inputLayerSize + 1)
-        t1 = thetas[t1_start:t1_end].reshape((hiddenLayerSize, inputLayerSize + 1))
-        t2 = thetas[t1_end:].reshape((numClassifyValues, hiddenLayerSize + 1))
-        return t1, t2
-    '''
 
     def unpack_thetas(self, thetas, inputLayerSize, numClassifyValues):
 
@@ -244,6 +251,52 @@ if __name__ == '__main__':
     nn = NeuralNetwork(lambda_=0, maxIter=500, smallInitValue=0.1, hiddenLayerSizes=hiddenLayers, optimizeAlgo='BFGS')
 
     nn.fit(X_train, y_train)
+
+    score = accuracy_score(y_test, nn.predict(X_test))
+    
+    print score
+
+    #nn.fit(X_train, y_train)
+
+    '''
+    fileName = 'c:\\test\\thetas.pkl'
+    f = open(fileName, 'r')
+    allToGrab = pickle.load(f)
+    f.close()
+
+    X_train = allToGrab[0]
+    X_test = allToGrab[1]
+    y_train = allToGrab[2]
+    y_test = allToGrab[3]
+    thetas = [allToGrab[4], allToGrab[5]]
+    nn.thetas = thetas
+    thetas = nn.pack_thetas(thetas)
+
+    #hypo = nn.predict_probability(X_test)
+    #print 'hypo = {}'.format(hypo)
+
+
+    print thetas.shape
+
+    inputLayerSize = X_test.shape[1]
+    numClassifyValues = len(set(y_test))
+
+    J = nn.function(thetas, inputLayerSize, 5, numClassifyValues, X_test, y_test, 0)
+    J_t  = nn.function_deriv(thetas, inputLayerSize, 5, numClassifyValues, X_test, y_test, 0, 0)
+
+    thetas2 = nn.unpack_thetas(J_t, inputLayerSize, numClassifyValues)
+
+    print '\nJ = {}\n'.format(J)
+    print thetas2[0].reshape(-1)
+    print thetas2[1].reshape(-1)
+
+
+    #nn.thetas = thetas
+
+    '''
+
+
+
 
 
 
