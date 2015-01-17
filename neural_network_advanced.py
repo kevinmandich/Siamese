@@ -54,11 +54,11 @@ class NeuralNetwork(object):
         thetasInitVec = self.vec_thetas(thetasInit)
 
         ## run the optimization routine
-        _res = minimize(self.cost_function, thetasInitVec, jac=self.cost_function_deriv, method=self.optimizeAlgo, \
-                        args=(X, y), options={'maxiter': self.maxIter})
+        result = minimize(self.cost_function, thetasInitVec, jac=self.cost_function_deriv, \
+                          method=self.optimizeAlgo, args=(X, y), options={'maxiter': self.maxIter})
 
         ## store the fitted weights as an attribute - a list of the theta arrays
-        self.thetas = self.unvec_thetas(_res.x)
+        self.thetas = self.unvec_thetas(result.x)
 
 
     def classify(self, X):
@@ -67,7 +67,7 @@ class NeuralNetwork(object):
         values of each of the samples contained within X.
         '''
 
-        _, _, _, _, hypothesis = self._forward(X, self.thetas)
+        _, _, _, _, hypothesis = self.forward_prop(X, self.thetas)
         return hypothesis.argmax(0)
     
 
@@ -78,7 +78,7 @@ class NeuralNetwork(object):
         the samples contained within X.
         '''
 
-        _, _, _, _, hypothesis = self._forward(X, self.thetas)
+        _, _, _, _, hypothesis = self.forward_prop(X, self.thetas)
         return hypothesis
 
 
@@ -96,8 +96,9 @@ class NeuralNetwork(object):
         m = X.shape[0]
         Y = np.eye(self.numClassifyValues)[y]
         
-        _, _, _, _, h = self._forward(X, thetas)
+        _, _, _, _, h = self.forward_prop(X, thetas)
 
+        ## compute J(theta)
         cost = (-Y * np.log(h).T) - ((1 - Y) * np.log(1 - h).T)
         J = np.sum(cost) / m
         
@@ -129,7 +130,7 @@ class NeuralNetwork(object):
 
         for i, row in enumerate(X):
             ## forward propagation
-            aIn, zH, aH, zOut, aOut = self._forward(row, thetas)
+            aIn, zH, aH, zOut, aOut = self.forward_prop(row, thetas)
             
             ## back propagation
             for j in range(self.numHiddenLayers, -1, -1):
@@ -148,13 +149,12 @@ class NeuralNetwork(object):
         ## apply regularization
         if self.lambda_ != 0:
             for i in range(self.numHiddenLayers + 1):
-                #thetaGradients[i][:, 1:] = thetaGradients[i][:, 1:] + (self.lambda_m / m) * tNoBias[i]
                 thetaGradients[i][:, 1:] += (self.lambda_m / m) * tNoBias[i]
 
         return self.vec_thetas(thetaGradients)
 
 
-    def _forward(self, X, thetas):
+    def forward_prop(self, X, thetas):
         '''
         Computes the forward propagation of the neural network.
             Arguments:
@@ -211,7 +211,7 @@ class NeuralNetwork(object):
         return sig * (1 - sig)
     
 
-    def sum_squre(self, a):
+    def sum_square(self, a):
         '''
         Returns the sum of the square of each element in the input array 'a'.
         '''
@@ -219,13 +219,13 @@ class NeuralNetwork(object):
         return np.sum(a ** 2)
     
 
-    def initialize_weights(self, l_in, l_out):
+    def initialize_weights(self, indexIn, indexOut):
         '''
         Returns a l_in x l_out array of random floats within 
         +/- self.smallInitValue
         '''
 
-        return np.random.rand(l_out, l_in + 1) * 2 * self.smallInitValue - self.smallInitValue
+        return np.random.rand(indexOut, indexIn + 1) * 2 * self.smallInitValue - self.smallInitValue
 
 
     def vec_thetas(self, thetas):
