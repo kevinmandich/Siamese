@@ -6,9 +6,9 @@ from sklearn.metrics import accuracy_score
 
 import sklearn.datasets as datasets
 import numpy as np
-import pandas as pd
 
-class NeuralNetwork(object):
+
+class NeuralNetworkMultiLayer(object):
 
     def __init__(self, lambda_=0, maxIter=500, smallInitValue=0.1, hiddenLayerSizes=[25], optimizeAlgo='BFGS'):
         '''
@@ -272,7 +272,7 @@ if __name__ == '__main__':
 
     hiddenLayers = [25, 10]
 
-    nn = NeuralNetwork(lambda_=0, maxIter=500, smallInitValue=0.1, hiddenLayerSizes=hiddenLayers, optimizeAlgo='BFGS')
+    nn = NeuralNetworkMultiLayer(lambda_=0, maxIter=500, smallInitValue=0.1, hiddenLayerSizes=hiddenLayers, optimizeAlgo='BFGS')
 
     nn.learn(X_train, y_train)
 

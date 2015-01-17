@@ -6,7 +6,6 @@ import sklearn.datasets as datasets
 from sklearn import cross_validation
 from sklearn.metrics import accuracy_score
 
-import time
 
 class NeuralNetwork(object):
     
