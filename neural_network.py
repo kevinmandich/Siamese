@@ -8,7 +8,6 @@ from sklearn.metrics import accuracy_score
 
 
 class NeuralNetwork(object):
-    
 
     def __init__(self, lambda_=0, maxIter=500, smallInitValue=0.1, hiddenLayerSize=25, optimizeAlgo='BFGS'):
         '''
