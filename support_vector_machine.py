@@ -2,7 +2,7 @@ from __future__ import division
 
 import numpy as np
 import pandas as pd
-import random, time
+import random, time, copy
 
 class SupportVectorMachine(object):
 
@@ -40,18 +40,18 @@ class SupportVectorMachine(object):
         n = X.shape[1]
 
         ## replace 0 with -1 in y
-        print y.shape
+        X = np.array(X)
         y = np.array(y)
         y[y == 0] = -1
 
         ## optimization parameters
         alphas = np.zeros([m,1])
         E = np.zeros([m, 1])
-        b, L, H, eta, passes = 0, 0, 0, 0, 0
+        b, L, H, eta, passes = 0.0, 0.0, 0.0, 0.0, 0.0
 
         ## pre-compute kernel matrix
-        x1 = np.array(X[X.columns[0]])
-        x2 = np.array(X[X.columns[1]])
+        x1 = X[:,0]
+        x2 = X[:,1]
 
         if self.kernel == 'gaussian':
 
@@ -66,11 +66,12 @@ class SupportVectorMachine(object):
         ## begin training
         while passes < self.maxPasses:
 
-            numAlphaChanges = 0
+            alphaChanges = 0
             for i in range(0, m):
 
                 E[i] = b + np.sum(alphas*y*K[:][i].reshape(m, 1)) - y[i]
 
+                #if (float(y[i]*E[i]) < -self.tol and float(alphas[i]) < self.C) or (float(y[i]*E[i]) > self.tol and float(alphas[i]) > 0):
                 if (y[i]*E[i] < -self.tol and alphas[i] < self.C) or (y[i]*E[i] > self.tol and alphas[i] > 0):
 
                     j = random.randint(0, m-1)
@@ -79,8 +80,9 @@ class SupportVectorMachine(object):
 
                     E[j] = b + np.sum(alphas*y*K[:][j].reshape(m, 1)) - y[j]
 
-                    alphaIOld = alphas[i]
-                    alphaJOld = alphas[j]
+
+                    alphaIOld = copy.copy(alphas[i])
+                    alphaJOld = copy.copy(alphas[j])
 
                     if y[i] == y[j]:
                         L = max(0, alphas[j] + alphas[i] - self.C)
@@ -98,8 +100,8 @@ class SupportVectorMachine(object):
 
                     alphas[j] = alphas[j] - (y[j]*(E[i] - E[j])) / eta
 
-                    alphas[j] = min(alphas[j], H)
-                    alphas[j] = max(alphas[j], L)
+                    alphas[j] = min(H, alphas[j])
+                    alphas[j] = max(L, alphas[j])
 
                     if abs(alphas[j] - alphaJOld) < self.tol:
                         alphas[j] = alphaJOld
@@ -110,7 +112,7 @@ class SupportVectorMachine(object):
                     b1 = b - E[i] - y[i] * K[i][j] * (alphas[i] - alphaIOld) \
                                   - y[j] * K[i][j] * (alphas[j] - alphaJOld)
 
-                    b1 = b - E[j] - y[i] * K[i][j] * (alphas[i] - alphaIOld) \
+                    b2 = b - E[j] - y[i] * K[i][j] * (alphas[i] - alphaIOld) \
                                   - y[j] * K[j][j] * (alphas[j] - alphaJOld)
 
                     if self.C > alphas[i] > 0:
@@ -120,24 +122,28 @@ class SupportVectorMachine(object):
                     else:
                         b = 0.5*(b1 + b2)
 
-            if numAlphaChanges == 0:
+                    alphaChanges += 1
+
+            if alphaChanges == 0:
                 passes += 1
             else:
                 passes = 0
 
-            print '.'
+            print '.',
 
         print '\nFinished training the support vector machine.\n\n'
 
         ## write the model as attributes
         indexes = np.where(alphas > 0)[0]
-        print indexes
         self.X = X[indexes,:]
         self.y = y[indexes]
         self.b = b
         self.alphas = alphas[indexes]
-        self.w = (((alphas*y).T)*X).T
+        self.w = (np.matrix((alphas*y).reshape(1,m))*X).T
 
+        #print alphas
+        print indexes
+        print self.b
         print self.w
 
 
@@ -156,7 +162,7 @@ if __name__ == '__main__':
     #x1 = np.array(X[X.columns[0]])
     #x2 = np.array(X[X.columns[1]])
 
-    svm = SupportVectorMachine(C=1.0, kernel='gaussian', sigma=0.1, tol=1e-3, maxPasses=5)
+    svm = SupportVectorMachine(C=1.0, kernel='gaussian', sigma=0.1, tol=1e-3, maxPasses=10)
 
     svm.learn(X, y)
 
