@@ -19,9 +19,9 @@ class SupportVectorMachine(object):
                      there are no further changes to 'alphas' (see self.learn)
         '''
 
-        self.C = C
+        self.C = float(C)
         self.kernel = kernel
-        self.sigma = sigma
+        self.sigma = float(sigma)
         self.tol = tol
         self.maxIter = maxIter
 
@@ -57,6 +57,8 @@ class SupportVectorMachine(object):
         along the first axis. Returns None.
         '''
 
+        startTime = time.time()
+
         ## input data parameters
         m = X.shape[0]
         n = X.shape[1]
@@ -84,6 +86,11 @@ class SupportVectorMachine(object):
         elif self.kernel == 'linear':
 
             K = self.linear_kernel(x1, x2)
+
+        else:
+            ## placeholder
+            print 'This type of kernel has not yet been implemented.\n'
+            return None
 
         ## begin training
         while iter_ < self.maxIter:
@@ -152,20 +159,18 @@ class SupportVectorMachine(object):
 
             print '.',
 
-        print '\nFinished training the support vector machine.\n\n'
+        endTime = time.time()
+        print '\nFinished training the support vector machine.'
+        print 'Total number of training examples: '.format(m)
+        print 'Elapsed time for training: {} seconds\n\n'.format(endTime - startTime)
 
         ## write the model as attributes
         indexes = np.where(alphas > 0)[0]
         self.X = X[indexes,:]
         self.y = y[indexes]
-        self.b = b
+        self.b = float(b)
         self.alphas = alphas[indexes]
         self.w = (np.matrix((alphas*y).reshape(1,m))*X).T
-
-        ## print alphas (for debugging)
-        #print self.X
-        print self.b
-        print self.w
 
         return None
 
@@ -183,42 +188,106 @@ class SupportVectorMachine(object):
             print 'The SVM must be trained before it can make predictions.\n'
             return None
 
+        #print 'y shape = {}'.format(self.y.shape)
+
         X = np.array(X)
-        if X.shape[0] == 1:
-            X.reshape(1, 2)
+        #if X.shape[0] == 1:
+        #    X.reshape(1, 2)
 
         m = X.shape[0]
-        #p = np.zeros(m)
-        pad = np.zeros(m)
+        prediction = np.zeros(m)
 
-        if self.kernel = 'linear':
+        if self.kernel == 'linear':
             p = X * model.w + model.b
 
+        elif self.kernel == 'gaussian':
+            Xtemp1 = np.sum(X**2, axis=1)
+            Xtemp2 = np.sum(self.X**2, axis=1)
+            K = Xtemp1.reshape(len(Xtemp1), 1) + Xtemp2 - 2*np.dot(X, self.X.T)
+            #print K.shape
+            K = self.gaussian_kernel(1, 0, self.sigma) ** K
+            K = self.y.reshape(1, len(self.y)) * K
+            K = self.alphas.reshape(1, len(self.alphas)) * K
+            p = np.sum(K, axis=1)
+
         else:
-            Xtemp1 = sum(X**2, axis=1)
-            Xtemp2 = sum(model.X**2, axis=1)
-            K = Xtemp1.reshape(len(Xtemp1), 1) + Xtemp2 - 2*np.dot(X, model.X.T)
-            K = model.gaussian_function(1, 0, sigma) ** K
+            ## placeholder
+            print 'This type of kernel has not yet been implemented.\n'
+            return None
+
+        ## recast probability to 0 or 1
+        prediction[p >= 0] = 1
+        prediction[p < 0] = 0
+
+        return prediction
 
 
+    def visualize_boundary(self, X, y, gridSize=100):
 
-    def plot_data(self, data):
+        X = np.array(X)
+        y = np.array(y)
+
+        ## first, plot the actual data
+        self.plot_data(X, y)
+
+        if self.kernel == 'linear':
+
+            xp = np.linspace(min(X[:,0]), max(X[:,0]), gridSize)
+            yp = - (self.w[0]*xp + self.b) / self.w[1]
+
+            ## overlay the linear boundary
+            pyplot.plot(xp, yp, 'b-')
+
+        else:
+
+            x1p = np.linspace(min(X[:,0]), max(X[:,0]), gridSize)
+            x2p = np.linspace(min(X[:,1]), max(X[:,1]), gridSize)
+
+            X1, X2 = np.meshgrid(x1p, x2p)
+            values = np.zeros(np.shape(X1))
+
+            for i in range(0, np.shape(X1)[0]):
+
+                xTest = np.hstack([X1[:,i].reshape(len(X1), 1),X2[:,i].reshape(len(X2), 1)])
+                values[:,i] = self.predict(xTest)
+
+            ## overlay the contour plot
+            plt.contour(X1, X2, values, colors='blue')
+            plt.show()
+
+        return None
+
+
+    def plot_data(self, X, y):
         '''
-        Plots the positive and negative examples included in 'data'. The last
-        column of 'data' must contain the classification values in (0,1).
+        Plots the positive and negative examples included in 'X'. 'y'
+        must contain the classification values in (0,1).
         '''
+
+        data = np.hstack([X,y])
 
         ## split the data into positives and negatives
         positives = data[data[:, 2] == 1]
         negatives = data[data[:, 2] == 0]
 
+        ## determine axis limits
+        xMin, xMax = min(X[:,0]), max(X[:,0]) 
+        yMin, yMax = min(X[:,1]), max(X[:,1])
+
+        xRange, yRange = abs(xMin - xMax), abs(yMin - yMax)
+
+        xMin, xMax = xMin - 0.05*xRange, xMax + 0.05*xRange
+        yMin, yMax = yMin - 0.05*yRange, yMax + 0.05*yRange 
+
         ## plot
-        plt.plot( positives[:, 0], positives[:, 1], 'bo' )
-        plt.plot( negatives[:, 0], negatives[:, 1], 'ro' )
+        plt.plot( positives[:, 0], positives[:, 1], 'yo', label='y = 1')
+        plt.plot( negatives[:, 0], negatives[:, 1], 'ko', label='y = 0')
 
         plt.xlabel('x1')
         plt.ylabel('x2')
         plt.title('SVM Example')
+        plt.axis([xMin, xMax, yMin, yMax])
+        plt.legend()
 
         return None
 
@@ -233,15 +302,14 @@ if __name__ == '__main__':
     y = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\svm_linear_y_values_2.csv')
 
 
-    svm = SupportVectorMachine(C=1.0, kernel='gaussian', sigma=0.1, tol=1e-3, maxPasses=5)
+    svm = SupportVectorMachine(C=0.5, kernel='gaussian', sigma=0.1, tol=1e-3, maxIter=5)
 
-    #svm.plot_data(np.hstack([X, y]))
-    #plt.show()
+    svm.learn(X, y)
 
-    #svm.learn(X, y)
+    print svm.b,'\n'
+    print svm.w,'\n'
 
-    svm.predict(X)
-
+    svm.visualize_boundary(X, y, gridSize=500)
 
 
 
