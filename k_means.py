@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import random as ran
 import operator as op
+import time
 
 
 class KMeansCluster(object):
@@ -20,7 +21,7 @@ class KMeansCluster(object):
         self.tol = tol
 
 
-    def plot_data(self, X, centroids=[]):
+    def plot_data(self, X, centroids=[], indexes=[]):
         '''
         Visualizes the 2-D input data.
         '''
@@ -31,8 +32,8 @@ class KMeansCluster(object):
         if type(X) != np.ndarray:
             X = np.array(X)
 
-        ## determine axis limits
-        xMin, xMax = min(X[:,0]), max(X[:,0]) 
+        ## determine axis limits for "nice" plotting
+        xMin, xMax = min(X[:,0]), max(X[:,0])
         yMin, yMax = min(X[:,1]), max(X[:,1])
 
         xRange, yRange = abs(xMin - xMax), abs(yMin - yMax)
@@ -41,9 +42,24 @@ class KMeansCluster(object):
         yMin, yMax = yMin - 0.05*yRange, yMax + 0.05*yRange 
 
         ## plot the data
-        plt.plot(X[:,0], X[:,1], 'ko', alpha=0.75)
-        if centroids.shape[0] > 0 and len(centroids.shape) == 2:
-            plt.plot(centroids[:,0], centroids[:,1], 'ro', alpha=0.8, ms=10,)
+        colors = ['b','r','y','g','c','m','k','0.60','0.30']
+
+        if len(indexes) == 0:
+            plt.plot(X[:,0], X[:,1], 'ko', alpha=0.75)
+            if len(centroids) > 0:
+                plt.plot(centroids[:,0], centroids[:,1], 'ro', alpha=0.75, ms=11, mew=1.5)
+
+        else:
+            if len(centroids) > 0:
+                #plt.plot(centroids[:,0], centroids[:,1], 'ro', alpha=0.75, ms=11, mew=1.5)
+
+                X = np.append(X, indexes, axis=1)
+
+                for i, c in enumerate(centroids):
+                    plt.plot(np.array([c[0]]), np.array([c[1]]), c=colors[i%len(colors)], marker='o', ms=11, alpha=0.9, mew=1)
+                    plt.plot(X[X[:,2]==i,0], X[X[:,2]==i,1], c=colors[i%len(colors)], ls='', marker='o', alpha=0.60)
+            else:
+                plt.plot(X[:,0], X[:,1], 'ko', alpha=0.75)
 
         plt.xlabel('x1')
         plt.ylabel('x2')
@@ -65,11 +81,12 @@ class KMeansCluster(object):
 
         centroids = []
 
+        ## find minimum and maximum of each dimension
         x1Min, x1Max = min(X[:,0]), max(X[:,0]) 
         x2Min, x2Max = min(X[:,1]), max(X[:,1])
 
+        ## assign random centroids for each cluster
         for i in range(self.numClusters):
-
             x1Cent = ran.random()*(x1Max - x1Min) + x1Min
             x2Cent = ran.random()*(x2Max - x2Min) + x2Min
 
@@ -124,12 +141,10 @@ class KMeansCluster(object):
         locations for each.
         '''
 
-        residual = 1.0
+        residual = 1e10
         while residual > self.tol:
             indexes       = self.assign_clusters(X, oldCentroids)
             newCentroids  = self.adjust_centroids(X, indexes)
-            J = self.cost_function(X, oldCentroids, indexes)
-            print J
             residual      = self.absolute_change(oldCentroids, newCentroids)
             oldCentroids  = newCentroids
 
@@ -153,20 +168,22 @@ class KMeansCluster(object):
         jMin = 1e100
         bestCentroids = None
         for i in range(numIter):
-
             print 'Iteration {} of {}'.format(i+1, numIter)
 
+            ## re-initialize centroids and compute new cost function
             initCentroids  = self.init_centroids(X)
             centroids      = self.converge(X, initCentroids, plotting=False)
             indexes        = self.assign_clusters(X, centroids)
             jNew           = self.cost_function(X, centroids, indexes)
 
+            ## update new centroids if cost function is lower than previous low
             if jNew < jMin:
                 bestCentroids = centroids
                 print '\nNew minimum J value = {}\n'.format(jNew)
                 jMin = jNew
 
         self.centroids = bestCentroids
+        self.indexes   = indexes
 
         return None
 
@@ -177,7 +194,7 @@ class KMeansCluster(object):
         defined by 'X', 'indexes', and 'centroids'.
         '''
 
-        return sum([self.squared_distance(x[0:2], indexes[i]) for i, x in enumerate(X)])
+        return np.sum([self.squared_distance(x[0:2], centroids[indexes[i]]) for i, x in enumerate(X)])
 
 
     def squared_distance(self, x, centroid):
@@ -204,10 +221,12 @@ if __name__ == '__main__':
 
     X = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\k_means_data.csv')
 
-    km = KMeansCluster(numClusters=3, tol=1e-4)
+    km = KMeansCluster(numClusters=6, tol=1e-4)
+
+    X = np.random.rand(200,2)
 
     km.best_fit(X, numIter=1)
-    km.plot_data(X, km.centroids)
+    km.plot_data(X, km.centroids, km.indexes)
 
 
 
