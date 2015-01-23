@@ -1,10 +1,10 @@
 from __future__ import division
 
 import matplotlib.pyplot as plt
-
 import numpy as np
 import pandas as pd
 import random, time, copy
+
 
 class SupportVectorMachine(object):
 
@@ -19,9 +19,9 @@ class SupportVectorMachine(object):
                      there are no further changes to 'alphas' (see self.learn)
         '''
 
-        self.C = float(C)
+        self.C = C
         self.kernel = kernel
-        self.sigma = float(sigma)
+        self.sigma = sigma
         self.tol = tol
         self.maxIter = maxIter
 
@@ -181,6 +181,7 @@ class SupportVectorMachine(object):
         on the input array X.
         '''
 
+        ## check if the model has been trained yet
         try:
             self.w
         except:
@@ -188,23 +189,19 @@ class SupportVectorMachine(object):
             print 'The SVM must be trained before it can make predictions.\n'
             return None
 
-        #print 'y shape = {}'.format(self.y.shape)
-
         X = np.array(X)
-        #if X.shape[0] == 1:
-        #    X.reshape(1, 2)
-
         m = X.shape[0]
         prediction = np.zeros(m)
 
         if self.kernel == 'linear':
+
             p = X * model.w + model.b
 
         elif self.kernel == 'gaussian':
+
             Xtemp1 = np.sum(X**2, axis=1)
             Xtemp2 = np.sum(self.X**2, axis=1)
             K = Xtemp1.reshape(len(Xtemp1), 1) + Xtemp2 - 2*np.dot(X, self.X.T)
-            #print K.shape
             K = self.gaussian_kernel(1, 0, self.sigma) ** K
             K = self.y.reshape(1, len(self.y)) * K
             K = self.alphas.reshape(1, len(self.alphas)) * K
@@ -302,7 +299,7 @@ if __name__ == '__main__':
     y = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\svm_linear_y_values_2.csv')
 
 
-    svm = SupportVectorMachine(C=0.5, kernel='gaussian', sigma=0.1, tol=1e-3, maxIter=5)
+    svm = SupportVectorMachine(C=0.1, kernel='gaussian', sigma=0.1, tol=1e-3, maxIter=5)
 
     svm.learn(X, y)
 
