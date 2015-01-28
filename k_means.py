@@ -223,7 +223,7 @@ if __name__ == '__main__':
 
     km = KMeansCluster(numClusters=5, tol=1e-4)
 
-    X = np.random.rand(200,2)
+    #X = np.random.rand(200,2)
 
     km.best_fit(X, numIter=20)
     km.plot_data(X, km.centroids, km.indexes)
