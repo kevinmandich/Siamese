@@ -51,19 +51,18 @@ class KMeansCluster(object):
 
         else:
             if len(centroids) > 0:
-                #plt.plot(centroids[:,0], centroids[:,1], 'ro', alpha=0.75, ms=11, mew=1.5)
-
                 X = np.append(X, indexes, axis=1)
-
                 for i, c in enumerate(centroids):
-                    plt.plot(np.array([c[0]]), np.array([c[1]]), c=colors[i%len(colors)], marker='o', ms=11, alpha=0.9, mew=1)
-                    plt.plot(X[X[:,2]==i,0], X[X[:,2]==i,1], c=colors[i%len(colors)], ls='', marker='o', alpha=0.60)
+                    plt.plot(np.array([c[0]]), np.array([c[1]]), c=colors[i%len(colors)], \
+                             marker='o', ms=11, alpha=0.9, mew=1)
+                    plt.plot(X[X[:,2]==i,0], X[X[:,2]==i,1], c=colors[i%len(colors)],  \
+                             ls='', marker='o', alpha=0.60)
             else:
                 plt.plot(X[:,0], X[:,1], 'ko', alpha=0.75)
 
         plt.xlabel('x1')
         plt.ylabel('x2')
-        plt.title('Raw Data')
+        plt.title('Clustered Data')
         plt.axis([xMin, xMax, yMin, yMax])
 
         plt.show()
@@ -182,6 +181,7 @@ class KMeansCluster(object):
                 print '\nNew minimum J value = {}\n'.format(jNew)
                 jMin = jNew
 
+        ## save the optimal centroids and assignments as attributes
         self.centroids = bestCentroids
         self.indexes   = indexes
 
@@ -221,11 +221,11 @@ if __name__ == '__main__':
 
     X = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\k_means_data.csv')
 
-    km = KMeansCluster(numClusters=6, tol=1e-4)
+    km = KMeansCluster(numClusters=5, tol=1e-4)
 
     X = np.random.rand(200,2)
 
-    km.best_fit(X, numIter=1)
+    km.best_fit(X, numIter=20)
     km.plot_data(X, km.centroids, km.indexes)
 
 
