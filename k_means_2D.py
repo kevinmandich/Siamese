@@ -8,7 +8,7 @@ import operator as op
 import time
 
 
-class KMeansCluster(object):
+class KMeansCluster2D(object):
 
     def __init__(self, numClusters, tol=1e-4):
         '''
@@ -178,12 +178,14 @@ class KMeansCluster(object):
             ## update new centroids if cost function is lower than previous low
             if jNew < jMin:
                 bestCentroids = centroids
+                bestIndexes = indexes
                 print '\nNew minimum J value = {}\n'.format(jNew)
                 jMin = jNew
 
         ## save the optimal centroids and assignments as attributes
         self.centroids = bestCentroids
-        self.indexes   = indexes
+        self.indexes = bestIndexes
+        #self.indexes   = self.assign_clusters(X, bestCentroids)
 
         return None
 
@@ -221,11 +223,11 @@ if __name__ == '__main__':
 
     X = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\k_means_data.csv')
 
-    km = KMeansCluster(numClusters=5, tol=1e-4)
+    km = KMeansCluster(numClusters=9, tol=1e-4)
 
-    #X = np.random.rand(200,2)
+    #X = np.random.rand(300,2)
 
-    km.best_fit(X, numIter=20)
+    km.best_fit(X, numIter=100)
     km.plot_data(X, km.centroids, km.indexes)
 
 
