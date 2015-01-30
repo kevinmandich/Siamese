@@ -223,7 +223,10 @@ if __name__ == '__main__':
 
     X = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\k_means_data.csv')
 
-    km = KMeansCluster(numClusters=9, tol=1e-4)
+    numClusters = 9
+    tol = 1e-4
+
+    km = KMeansCluster(numClusters, tol)
 
     #X = np.random.rand(300,2)
 
