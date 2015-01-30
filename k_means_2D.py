@@ -185,7 +185,6 @@ class KMeansCluster2D(object):
         ## save the optimal centroids and assignments as attributes
         self.centroids = bestCentroids
         self.indexes = bestIndexes
-        #self.indexes   = self.assign_clusters(X, bestCentroids)
 
         return None
 
