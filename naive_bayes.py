@@ -8,11 +8,18 @@ import time
 
 class NaiveBayes(object):
 
-    def __init__(self):
+    def __init__(self, X, className):
 
-        ## initialize all object attributes
-        self.features = set()
-        self.className = ''
+        ## store the className and the set of features
+        self.X = X
+        self.className = className
+        self.classes = X.groupby(className).size()
+        self.features = set(X.columns) - set([className])
+
+        ## store all possible values for each feature
+        self.featureValues = {}
+        for feature in self.features:
+            self.featureValues[feature] = [ind for ind in X.groupby(feature).size().index]
 
         self.evidence = {}
         self.priors = {}
@@ -33,10 +40,9 @@ class NaiveBayes(object):
         total = len(X)
 
         ## compute evidence propabailities:
-        for feature in X.columns:
-            if feature != self.className:
-                features = X.groupby(feature).size()
-                evidence[feature] = {key:features[key]/total for key in features.index}
+        for feature in self.features:
+            features = X.groupby(feature).size()
+            evidence[feature] = {key:features[key]/total for key in features.index}
 
         return evidence
 
@@ -54,29 +60,27 @@ class NaiveBayes(object):
             classData = X[X[self.className]==class_]
             classTotal = len(classData)
 
-            for feature in X.columns:
+            for feature in self.features:
 
                 likelihood[class_][feature] = {}
+                classFeatures = classData.groupby(feature).size()
 
-                if feature != self.className:
-                    classFeatures = classData.groupby(feature).size()
+                ## initialize all feature value likelihoods has having a probability of 0.0
+                for index in self.featureValues[feature]:
+                    likelihood[class_][feature][index] = 0.0
 
-                    for index in classFeatures.index:
-                        likelihood[class_][feature][index] = classFeatures[index]/classTotal
+                ## compute the likelihood probability
+                for index in classFeatures.index:
+                    likelihood[class_][feature][index] = classFeatures[index]/classTotal
 
         return likelihood
 
 
-    def train(self, X, className):
+    def train(self):
 
-        ## store the className and the set of features
-        self.className = className
-        self.classes = X.groupby(className).size()
-        self.features = set(X.columns) - set([className])
-
-        self.priors = self.compute_priors(X)
-        self.evidence = self.compute_evidence(X)
-        self.likelihood = self.compute_likelihood(X)
+        self.priors     = self.compute_priors(self.X)
+        self.evidence   = self.compute_evidence(self.X)
+        self.likelihood = self.compute_likelihood(self.X)
 
         return None
 
@@ -87,12 +91,32 @@ class NaiveBayes(object):
             print '\nYou must train the Naive Bayes classifier before using it.\n'
             return None
 
-        
+        maxProb = 0
+        for class_ in self.classes.index:
+
+            pPrior = self.priors[class_]
+            pEvidence = 1.0
+            pLikelihood = 1.0
+
+            for feature in self.features:
+                featureValue = xTest[feature][int(xTest.index)]
+                pEvidence *= self.evidence[feature][featureValue]
+                pLikelihood *= self.likelihood[class_][feature][featureValue]
+
+            pPosterior = pLikelihood*pPrior/pEvidence
+
+            if pPosterior > maxProb:
+                maxProb = pPosterior
+                bestClass = class_
+
+        return bestClass
+
 
 
 
 if __name__ == '__main__':
 
+    '''
     data = sm.datasets.fair.load_pandas().data
 
     ## modify data
@@ -101,10 +125,28 @@ if __name__ == '__main__':
     cd = data[data['affairs']==1]
     cf = cd.groupby('rate_marriage').size()
 
-    nb = NaiveBayes()
-    nb.train(data, 'affairs')
+    nb = NaiveBayes(data, 'affairs')
+    nb.train()
 
-    dataTest = data[0:1]
+    xTest = data[5000:5001]
+
+    predictedClass = nb.predict(xTest)
+    print xTest
+    print 'Predicted class = {}'.format(predictedClass)
+    '''
+
+    data = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\fruit.csv')
+
+    nb = NaiveBayes(data, 'fruit')
+    nb.train()
+
+    print data[0:1]
+    print nb.predict(data[0:1])
+
+
+
+
+
 
 
 

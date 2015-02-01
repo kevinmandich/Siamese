@@ -25,7 +25,7 @@ class KMeansClusterND(object):
 
     def plot_data(self, X, centroids=[], indexes=[]):
         '''
-        Visualizes the 2-D input data.
+        Visualizes the 2-D or 3-D input data.
         '''
 
         if len(X.shape) > 3:
