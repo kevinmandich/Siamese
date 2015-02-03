@@ -1,6 +1,7 @@
 from __future__ import division
 
 import statsmodels.api as sm
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import time
@@ -9,6 +10,10 @@ import time
 class NaiveBayes(object):
 
     def __init__(self, X, className):
+        '''
+        Initialize the class with the training data 'X' and the name
+        of the classification variable, 'className'
+        '''
 
         ## store the className and the set of features
         self.X = X
@@ -27,14 +32,21 @@ class NaiveBayes(object):
 
 
     def compute_priors(self, X):
+        '''
+        Returns a dictionary with classification values as keys and their
+        respective prior probability as values.
+        '''
 
-        ## compute class priors:
         total = len(X)
 
         return {class_:self.classes[class_]/total for class_ in self.classes.index}
 
 
     def compute_evidence(self, X):
+        '''
+        Returns a dictionary of dictionaries corresponding to the 
+        marginal probability, or evidence, of the training set features.
+        '''
 
         evidence = {}
         total = len(X)
@@ -48,6 +60,10 @@ class NaiveBayes(object):
 
 
     def compute_likelihood(self, X):
+        '''
+        Returns a dictionary of dictionaries of dictionaries corresponding
+        to the likelihood probabilities of each feature value.
+        '''
 
         likelihood = {}
 
@@ -77,6 +93,10 @@ class NaiveBayes(object):
 
 
     def train(self):
+        '''
+        The training routine which learns the prior, marginal, and
+        likelihood probabilities of the NaiveBayes object's training data.
+        '''
 
         self.priors     = self.compute_priors(self.X)
         self.evidence   = self.compute_evidence(self.X)
@@ -86,6 +106,10 @@ class NaiveBayes(object):
 
 
     def predict(self, xTest):
+        '''
+        Returns the class corresponding to the highest posterior
+        proability computed for the input sample 'xTest'
+        '''
 
         if len(self.features) == 0:
             print '\nYou must train the Naive Bayes classifier before using it.\n'
@@ -103,6 +127,7 @@ class NaiveBayes(object):
                 pEvidence *= self.evidence[feature][featureValue]
                 pLikelihood *= self.likelihood[class_][feature][featureValue]
 
+            ## note: don't actually need to use pEvidence here
             pPosterior = pLikelihood*pPrior/pEvidence
 
             if pPosterior > maxProb:
@@ -116,7 +141,7 @@ class NaiveBayes(object):
 
 if __name__ == '__main__':
 
-    '''
+
     data = sm.datasets.fair.load_pandas().data
 
     ## modify data
@@ -142,7 +167,7 @@ if __name__ == '__main__':
 
     print data[0:1]
     print nb.predict(data[0:1])
-
+    '''
 
 
 

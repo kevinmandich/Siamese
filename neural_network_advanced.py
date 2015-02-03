@@ -68,6 +68,7 @@ class NeuralNetworkMultiLayer(object):
         '''
 
         _, _, _, _, hypothesis = self.forward_prop(X, self.thetas)
+
         return hypothesis.argmax(0)
     
 
@@ -79,6 +80,7 @@ class NeuralNetworkMultiLayer(object):
         '''
 
         _, _, _, _, hypothesis = self.forward_prop(X, self.thetas)
+
         return hypothesis
 
 
@@ -108,6 +110,7 @@ class NeuralNetworkMultiLayer(object):
             t2f = t2[:, 1:]
             reg = (self.lambda_ / (2 * m)) * (self.sum_square(t1f) + self.sum_square(t2f))
             J += reg
+
         return J
         
 
