@@ -49,3 +49,5 @@ old
 # Other things to ignore
 python.exe
 pythonw.exe
+.gitignore
+.gitattributes
