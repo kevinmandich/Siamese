@@ -13,11 +13,10 @@ from sklearn.cross_validation import cross_val_score
 
 if __name__ == '__main__':
 
-    dta = sm.datasets.fair.load_pandas().data
+    data = sm.datasets.fair.load_pandas().data
 
-    dta['affair'] = (dta.affairs > 0).astype(int)
-
-    #dta.groupby('affair').mean()
+    ## re-cast any affairs with value > 0 as 1
+    data['affair'] = (data.affairs > 0).astype(int)
 
     y, X = dmatrices('affair ~ rate_marriage + age + yrs_married + children + religious + educ + occupation + occupation_husb', dta, return_type="dataframe")
 

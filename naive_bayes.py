@@ -108,7 +108,7 @@ class NaiveBayes(object):
     def predict(self, xTest):
         '''
         Returns the class corresponding to the highest posterior
-        proability computed for the input sample 'xTest'
+        proability computed for the input sample 'xTest'O
         '''
 
         if len(self.features) == 0:
