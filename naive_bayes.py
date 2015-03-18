@@ -4,19 +4,23 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import time
+import time, os
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.cross_validation import train_test_split
+from sklearn import metrics
+from sklearn.cross_validation import cross_val_score
 
 class NaiveBayes(object):
 
     def __init__(self, X, className):
         '''
         Initialize the class with the training data 'X' and the name
-        of the classification variable, 'className'
+        of the classification variable, 'className'. Here, 'X' is assumed
+        to be a Pandas dataframe object.
         '''
 
         ## store the className and the set of features
-        self.X = X
         self.className = className
         self.classes = X.groupby(className).size()
         self.features = set(X.columns) - set([className])
@@ -26,6 +30,7 @@ class NaiveBayes(object):
         for feature in self.features:
             self.featureValues[feature] = [ind for ind in X.groupby(feature).size().index]
 
+        ## initialize probability dictionaries
         self.evidence = {}
         self.priors = {}
         self.likelihood = {}
@@ -92,83 +97,84 @@ class NaiveBayes(object):
         return likelihood
 
 
-    def train(self):
+    def train(self, X):
         '''
         The training routine which learns the prior, marginal, and
         likelihood probabilities of the NaiveBayes object's training data.
         '''
 
-        self.priors     = self.compute_priors(self.X)
-        self.evidence   = self.compute_evidence(self.X)
-        self.likelihood = self.compute_likelihood(self.X)
+        self.priors     = self.compute_priors(X)
+        self.evidence   = self.compute_evidence(X)
+        self.likelihood = self.compute_likelihood(X)
 
         return None
 
 
-    def predict(self, xTest):
+    def predict(self, xTest, evidenceFlag=False):
         '''
         Returns the class corresponding to the highest posterior
-        proability computed for the input sample 'xTest'O
+        proability computed for the input sample 'xTest'
+
+        evidenceFlag - when True, includes the P(evidence) as part of the 
+                       computation for the posterior probability.
         '''
 
         if len(self.features) == 0:
             print '\nYou must train the Naive Bayes classifier before using it.\n'
             return None
 
-        maxProb = 0
-        for class_ in self.classes.index:
+        predicted = []
 
-            pPrior = self.priors[class_]
-            pEvidence = 1.0
-            pLikelihood = 1.0
+        for i in range(len(xTest)):
 
-            for feature in self.features:
-                featureValue = xTest[feature][int(xTest.index)]
-                pEvidence *= self.evidence[feature][featureValue]
-                pLikelihood *= self.likelihood[class_][feature][featureValue]
+            X = xTest[i:i+1]            
+            maxProb = 0
 
-            ## note: don't actually need to use pEvidence here
-            pPosterior = pLikelihood*pPrior/pEvidence
+            for class_ in self.classes.index:
 
-            if pPosterior > maxProb:
-                maxProb = pPosterior
-                bestClass = class_
+                pPrior = self.priors[class_]
+                pEvidence = 1.0
+                pLikelihood = 1.0
 
-        return bestClass
+                for feature in self.features:
+
+                    featureValue = X[feature][int(X.index[0])]
+                    if evidenceFlag:
+                        pEvidence *= self.evidence[feature][featureValue]
+
+                    try:
+                        pLikelihood *= self.likelihood[class_][feature][featureValue]
+                    except:
+                        print 'Warning: the feature value {} for feature {}'.format(featureValue, feature) \
+                             +'does not exist in the training data'
+                        pLikelihood = 0
+                        break
+
+                if evidenceFlag:
+                    pPosterior = pLikelihood*pPrior/pEvidence
+                else:
+                    pPosterior = pLikelihood*pPrior
+
+                if pPosterior > maxProb:
+                    maxProb = pPosterior
+                    bestClass = class_
+
+            predicted.append(bestClass)
+
+        return predicted
 
 
 
 
 if __name__ == '__main__':
 
+    data = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\sample2.csv')
+    print data
 
-    data = sm.datasets.fair.load_pandas().data
+    nb = NaiveBayes(data, 'goodBad')
+    nb.train(data)
 
-    ## modify data
-    data['affairs'] = (data.affairs > 0).astype(int)
-
-    cd = data[data['affairs']==1]
-    cf = cd.groupby('rate_marriage').size()
-
-    nb = NaiveBayes(data, 'affairs')
-    nb.train()
-
-    xTest = data[5000:5001]
-
-    predictedClass = nb.predict(xTest)
-    print xTest
-    print 'Predicted class = {}'.format(predictedClass)
-    '''
-
-    data = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\fruit.csv')
-
-    nb = NaiveBayes(data, 'fruit')
-    nb.train()
-
-    print data[0:1]
-    print nb.predict(data[0:1])
-    '''
-
+    predicted = nb.predict(data)
 
 
 

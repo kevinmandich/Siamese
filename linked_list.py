@@ -27,6 +27,30 @@ class FIFO(object):
         return None
 
 
+class LIFO(object):
+
+    def __init__(self, maxSize=10):
+
+        self.data = {}
+        self.max = maxSize
+        self.last = 0
+
+    def push(self, value):
+
+        if self.last >= self.max:
+            raise ValueError('Can\'t push: the maximum stack size of {} elements has been reached.'.format(self.max))
+        self.data[self.last] = value
+        self.last += 1
+
+    def pop(self):
+
+        if self.last == 0:
+            raise ValueError('Can\'t pop: there are no elements left in the stack.')
+        if self.last > 0:
+            self.last -= 1
+        return self.data.pop(self.last)
+
+
 class Node1(object):
 
     def __init__(self, value):
@@ -202,6 +226,14 @@ class DoublyLinkedList(object):
                 node.prevNode = self.tail
                 self.tail = node
 
+    def insert_after(self, node, nodeAfter):
+
+        if not nodeAfter:
+            raise ValueError('Specified node does not exist')
+        if not self.head or not self.tail:
+            self.insert_beginning(node)
+
+        ## finish this
 
 
 
@@ -224,6 +256,7 @@ if __name__ == '__main__':
     d1.insert_beginning(Node2(8))
     d1.insert_beginning(Node2(18))
 
+    '''
     d2 = DoublyLinkedList()
     d2.insert_end(Node2(6))
     d2.insert_end(Node2(7))
@@ -236,7 +269,11 @@ if __name__ == '__main__':
     d4 = DoublyLinkedList()
     d4.insert_beginning(Node2(50))
     d4.insert_end(Node2(100))
+    '''
 
+    stack = LIFO()
+    for x in range(15,19):
+        stack.push(x)
 
 
 

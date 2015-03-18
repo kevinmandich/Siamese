@@ -1,5 +1,8 @@
 ## graph.py
 
+import string
+import random as ran
+
 class Vertex(object):
 
     def __init__(self, value=''):
@@ -14,6 +17,9 @@ class Vertex(object):
 
 
 class Edge(tuple):
+    '''
+    Should replace this with 'arc' for directed graph.
+    '''
 
     def __new__(cls, e1, e2):
 
@@ -26,7 +32,7 @@ class Edge(tuple):
     __str__ = __repr__
 
 
-class Graph(dict):
+class UndirectedGraph(dict):
 
     def __init__(self, es=[], vs=[]):
 
@@ -36,15 +42,47 @@ class Graph(dict):
         for edge in es:
             self.add_edge(edge)
 
-    def add_vertex(self, vertex):
+    def add_vertex(self, v):
 
         self[v] = {}
 
-    def add_edge(self, edge):
+    def add_edge(self, e):
 
-        v, w = e
-        self[v][w] = e
-        self[w][v] = e
+        a, b = e
+        self[a][b] = e
+        self[b][a] = e
+
+
+class DirectedGraph(dict):
+
+    def __init__(self, vs=[], es=[]):
+
+        for vertex in vs:
+            self.add_vertex(vertex)
+        for edge in es:
+            self.add_edge(edge)
+
+    def add_vertex(self, v):
+
+        self[v] = {}
+
+    def add_edge(self, e):
+
+        a, b = e
+        self[a][b] = e
+
+    def add_alphabet_vertices(self):
+
+        for char in string.lowercase:
+            self.add_vertex(Vertex(char))
+
+    def add_random_edges(self, threshold):
+
+        for i in self:
+            for j in self:
+                if i != j and ran.random() >= threshold:
+                    self.add_edge(Edge(i,j))
+
 
 
 
@@ -53,25 +91,19 @@ if __name__ == '__main__':
 
     v = Vertex('v')
     w = Vertex('w')
-    x = Vertex('x')
-    y = Vertex('y')
-    z = Vertex('z')
+    vs = [v, w]
 
     e = Edge(v,w)
-    f = Edge(v,x)
-    g = Edge(v,y)
-    h = Edge(v,z)
-    i = Edge(w,x)
-    j = Edge(w,y)
-    k = Edge(w,z)
-    l = Edge(x,y)
-    m = Edge(x,z)
-    n = Edge(y,z)
+    es = [e]
 
-    vs = [v,w,x,y,z]
-    es = [e,f,g,h,i,j,k,l,m,n]
+    ug = UndirectedGraph(es, vs)
 
-    g = Graph(vs, es)
+
+    threshold = 0.95
+
+    dg = DirectedGraph()
+    dg.add_alphabet_vertices()
+    dg.add_random_edges(threshold)
 
 
 

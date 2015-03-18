@@ -299,7 +299,7 @@ if __name__ == '__main__':
     y = pd.read_csv('c:\\winpy\\python\\Siamese\\example_data\\svm_linear_y_values_2.csv')
 
 
-    svm = SupportVectorMachine(C=0.1, kernel='gaussian', sigma=0.1, tol=1e-3, maxIter=5)
+    svm = SupportVectorMachine(C=10, kernel='gaussian', sigma=0.1, tol=1e-3, maxIter=5)
 
     svm.learn(X, y)
 

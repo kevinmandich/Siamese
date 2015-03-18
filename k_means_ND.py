@@ -30,6 +30,7 @@ class KMeansClusterND(object):
 
         if len(X.shape) > 3:
             print 'Error: Can not represent the {}-D input data on a plot'.format(len(X.shape))
+            return None
 
         if type(X) != np.ndarray:
             X = np.array(X)

@@ -48,7 +48,7 @@ if __name__ == '__main__':
     ## ten-fold cross-validation:
 
     scores = cross_val_score(LogisticRegression(), X, y, scoring='accuracy', cv=10)
-    print scores
+    print 'Scores:\n', scores
     print scores.mean(), '\n'
 
 
